@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_facebook_login/flutter_facebook_login.dart';
 import 'package:flutter_task/pages/home.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -12,11 +13,17 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
 
   logInWithFacebook() async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+
     final facebookLogin = new FacebookLogin();
     final result = await facebookLogin.logIn(['email']);
     switch (result.status) {
       case FacebookLoginStatus.loggedIn:
+
+        final AuthCredential credential = FacebookAuthProvider.credential(result.accessToken.token);
+        final UserCredential user = await FirebaseAuth.instance.signInWithCredential(credential);
         print(result.accessToken.token);
+        pref.setString('login', user.user.email);
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>Home()));
         break;
       case FacebookLoginStatus.cancelledByUser:
@@ -29,6 +36,7 @@ class _LoginState extends State<Login> {
   }
 
   static Future<User> loginInWithGoogle({BuildContext context}) async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
     FirebaseAuth auth = FirebaseAuth.instance;
     User user;
 
@@ -46,12 +54,16 @@ class _LoginState extends State<Login> {
       );
 
       try {
+
         final UserCredential userCredential =
             await auth.signInWithCredential(credential);
 
         user = userCredential.user;
+
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => Home()));
+
+        pref.setString('login', user.email);
       } on FirebaseAuthException catch (e) {
         if (e.code == 'account-exists-with-different-credential') {
           // handle the error here
@@ -76,6 +88,11 @@ class _LoginState extends State<Login> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Text('Login ',style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),),
+              Divider(endIndent: 135,indent: 125,height: 5,thickness: 1,color: Colors.blue,),
+              SizedBox(
+                height: 50,
+              ),
               Material(
                   borderRadius: BorderRadius.circular(20.0),
                   color: Colors.blue,

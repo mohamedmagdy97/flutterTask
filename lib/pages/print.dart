@@ -18,8 +18,7 @@ class _PrintState extends State<Print> {
   List<PrinterBluetooth> _devices = [];
   String _deviceMsg;
 
-  @override
-  void initState() {
+  searchProgress(){
     bluetoothManager.state.listen((event) {
       if (!mounted) return;
       if (event == 12) {
@@ -28,11 +27,16 @@ class _PrintState extends State<Print> {
       } else if (event == 10) {
         print('off');
         setState(() => _deviceMsg = 'Bluetooth disconnect !');
+        setState(() => check = false );
       }
     });
+  }
+  @override
+  void initState() {
+    searchProgress();
     super.initState();
   }
-
+bool check = false ;
   void initPrinter() {
     _printerManager.startScan(Duration(seconds: 2));
     _printerManager.scanResults.listen((val) {
@@ -41,6 +45,7 @@ class _PrintState extends State<Print> {
       print(_devices);
       if (_devices.isEmpty) setState(() => _deviceMsg = 'No Devices !');
     });
+    setState(() => check = false );
   }
 
   Future<void> _startPrint(PrinterBluetooth printer) async {
@@ -54,10 +59,13 @@ class _PrintState extends State<Print> {
             ));
   }
 
+  /// static data to print
+
   Future<Ticket> _ticket(PaperSize paper) async {
     final ticket = Ticket(paper);
-    ticket.text('Test');
-    ticket.text('Thank You ',styles: PosStyles(align: PosAlign.center,bold: true));
+    ticket.text('Task ASAP');
+    ticket.text('Thank You ',
+        styles: PosStyles(align: PosAlign.center, bold: true));
     ticket.cut();
     return ticket;
   }
@@ -66,12 +74,12 @@ class _PrintState extends State<Print> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Print'),
+        title: Text('Search page'),
         centerTitle: true,
       ),
       body: _devices.isEmpty
           ? Center(
-              child: Text(_deviceMsg ?? ''),
+              child: check ? CircularProgressIndicator() : Text(_deviceMsg ?? ''),
             )
           : ListView.builder(itemBuilder: (c, i) {
               return ListTile(
@@ -83,6 +91,13 @@ class _PrintState extends State<Print> {
                 },
               );
             }),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.search),
+        onPressed: ()async {
+          setState(() => check = true );
+          await searchProgress();
+        },
+      ),
     );
   }
 

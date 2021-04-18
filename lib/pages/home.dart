@@ -1,6 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_login/flutter_facebook_login.dart';
+import 'package:flutter_task/pages/login.dart';
 import 'package:flutter_task/pages/print.dart';
 import 'package:flutter_task/pages/web_view.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -29,12 +35,40 @@ class _HomeState extends State<Home> {
   List strLise = ['Bluetooth', 'WiFi'];
   String val;
 
+  logout()async{
+    final facebookLogin = new FacebookLogin();
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    try {
+      if (!kIsWeb) {
+        await googleSignIn.signOut();
+      }
+      await FirebaseAuth.instance.signOut();
+      await facebookLogin.logOut();
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      pref.remove('login');
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>Login()));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.black,
+          content: Text('Error signing out. Try again.'),
+        ),
+      );
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Home'),
         centerTitle: true,
+         actions: [
+           IconButton(icon: Icon(Icons.logout),onPressed: (){
+             logout();
+           },)
+         ],
       ),
       body: Container(
         padding: EdgeInsets.all(15),
@@ -124,10 +158,10 @@ class _HomeState extends State<Home> {
                       Navigator.push(context, MaterialPageRoute(builder: (context)=>Print(val: val,)));
                     },
                     child: Text(
-                      "Print",
+                      "Search devices",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 20.0),
                     ),
